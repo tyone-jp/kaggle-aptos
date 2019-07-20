@@ -10,7 +10,7 @@ df_test=load_test_data()
 def preprocessing(img,size=224):
     img=Image.open(img)
     img=img.resize((size,size),Image.LANCZOS)
-    return img
+
 
 N_train=df_train.shape[0]
 N_test=df_test.shape[0]
@@ -21,5 +21,5 @@ for i,path in enumerate(tqdm(df_train['id_code'])):
 for i,path in enumerate(tqdm(df_test['id_code'])):
     x_test[i,:,:,:]=preprocessing(f'../input/aptos2019-blindness-detection/test_images/{path}.png')
 
-np.savez('../input/aptos2019-blindness-detection/resize_test_train',x_train=x_train,x_test=x_test)
+np.savez('../input/aptos2019-blindness-detection/resize_test_train',x_train,x_test)
 

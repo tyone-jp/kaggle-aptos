@@ -1,8 +1,8 @@
 import pandas as pd
 import numpy as np
 
-TRAIN_PATH='../input/train.csv'
-TEST_PATH='../input/test.csv'
+TRAIN_PATH='../input/aptos2019-blindness-detection/train.csv'
+TEST_PATH='../input/aptos2019-blindness-detection/test.csv'
 
 def load_test():
     df=pd.read_csv(TEST_PATH)
@@ -11,8 +11,3 @@ def load_test():
 def load_train():
     df=pd.read_csv(TRAIN_PATH)
     return df
-
-if __name__=='__main__':
-    print(load_test().head())
-    print(load_train().head())
-    
