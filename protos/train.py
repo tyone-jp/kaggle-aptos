@@ -18,7 +18,7 @@ df_test=load_test()
 
 y_train=pd.get_dummies(df_train['diagnosis']).values
 
-data=np.load('../input/aptos2019-blindness-detection/resize_test_train.npz')
+data=np.load('../input/aptos2019-blindness-detection/cropping_blur.npz')
 x_train=data['x_train'].astype(int)
 x_test=data['x_test'].astype(int)
 
