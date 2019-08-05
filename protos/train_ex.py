@@ -1,6 +1,6 @@
 import pandas as pd
 import numpy as np
-from load import load_train,load_test
+from load import load_train,load_test,load_train1
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import cohen_kappa_score,accuracy_score
 from tqdm import tqdm
@@ -13,20 +13,15 @@ from keras.preprocessing.image import ImageDataGenerator
 from keras.models import Sequential
 from keras.optimizers import Adam
 
-df_train=load_train()
-df_test=load_test()
+df_train=load_train1()
 
-y_train=pd.get_dummies(df_train['diagnosis']).values
-y_train_multi=np.empty(y_train.shape,dtype=y_train.dtype)
-y_train_multi[:,4]=y_train[:,4]
-for i in range(3,-1,-1):
-    y_train_multi[:,i]=np.logical_or(y_train[:,i],y_train_multi[:,i+1])
+y_train=pd.get_dummies(df_train[:3510*1]['level']).values
 
-data=np.load('../input/aptos2019-blindness-detection/circle_cropping.npz')
-x_train=data['x_train'].astype(int)
-x_test=data['x_test'].astype(int)
+x=np.load('../input/diabetic-retinopathy-resized/circle_cropping/circle_cropping0.npz')
+x=x['x_train']
+x_train=x.astype(np.uint8)
 
-x_train,x_val,y_train,y_val=train_test_split(x_train,y_train_multi,test_size=0.15,random_state=0)
+x_train,x_val,y_train,y_val=train_test_split(x_train,y_train,test_size=0.15,random_state=0)
 
 BATCH_SIZE=32
 
@@ -45,9 +40,9 @@ def build_model():
         model.add(densenet)
         model.add(layers.GlobalAveragePooling2D())
         model.add(layers.Dropout(0.5))
-        model.add(layers.Dense(5,activation='sigmoid'))
+        model.add(layers.Dense(5,activation='softmax'))
 
-        model.compile(loss='binary_crossentropy',optimizer=Adam(lr=0.00005),metrics=['accuracy'])
+        model.compile(loss='categorical_crossentropy',optimizer=Adam(lr=0.00005),metrics=['accuracy'])
         return model
 
 class Metrics(Callback):
@@ -56,31 +51,28 @@ class Metrics(Callback):
 
         def on_epoch_end(self,epoch,logs={}):
             X_val,y_val=self.validation_data[:2]
-            y_val=y_val.sum(axis=1)-1
-            y_pred=self.model.predict(X_val)>0.5
-            y_pred=y_pred.astype(int).sum(axis=1)-1
-            _val_kappa=cohen_kappa_score(y_val,
-                                          y_pred,
+            y_pred=self.model.predict(X_val)
+            _val_kappa=cohen_kappa_score(y_val.argmax(axis=1),
+                                          y_pred.argmax(axis=1),
                                           weights='quadratic')
 
             self.val_kappas.append(_val_kappa)
 
             print(f'val_kappa:{_val_kappa:.4f}')
-
-            if _val_kappa==max(self.val_kappas):
-                print('Vlidation Kappa has improved. Saveing model.')
-                self.model.save('model.h5')
             return
-        
     
 model=build_model()
 model.summary()
 
 kappa_metrics=Metrics()
+checkpoint=ModelCheckpoint('pre_trained_model1.h5',monitor='val_loss',
+                                                      verbose=0,save_best_only=True,
+                                                       save_weights_only=False,
+                                                       mode='auto')
 history=model.fit_generator(data_generator,
                              steps_per_epoch=x_train.shape[0]/BATCH_SIZE,
                              epochs=15,
                              validation_data=(x_val,y_val),
-                             callbacks=[kappa_metrics])
+                             callbacks=[checkpoint,kappa_metrics])
  
  
