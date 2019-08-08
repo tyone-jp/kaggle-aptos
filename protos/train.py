@@ -22,7 +22,8 @@ y_train_multi[:,4]=y_train[:,4]
 for i in range(3,-1,-1):
     y_train_multi[:,i]=np.logical_or(y_train[:,i],y_train_multi[:,i+1])
 
-data=np.load('../input/aptos2019-blindness-detection/circle_cropping.npz')
+data_file='../input/aptos2019-blindness-detection/circle_cropping.npz'
+data=np.load(data_file)
 x_train=data['x_train'].astype(int)
 x_test=data['x_test'].astype(int)
 
@@ -83,4 +84,8 @@ history=model.fit_generator(data_generator,
                              validation_data=(x_val,y_val),
                              callbacks=[kappa_metrics])
  
- 
+model.load_weights('model.h5')
+y_pred=model.predict(x_train)>0.5
+y_pred=y_pred.astype(int).sum(axis=1)-1
+cohen_kappa=cohen_kappa_score(y_pred,df_train['diagnosis'].values,weight='quadratic')
+print(cohen_kappa)
